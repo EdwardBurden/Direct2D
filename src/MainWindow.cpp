@@ -68,6 +68,7 @@ void MainWindow::OnLeftMouseButtonDown_Message(int pixelX, int pixelY, DWORD fla
 	SetCapture(m_windowHandle);
 	m_mousePoint = DPIScale::PixelsToDips(pixelX, pixelY); //todo test if this makes a difference on different scales
 	m_scene->SetMouseState(1);
+	m_scene->OnMouseClick(m_windowHandle, m_mousePoint);
 	InvalidateRect(m_windowHandle, NULL, FALSE);
 
 }

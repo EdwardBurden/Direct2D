@@ -1,29 +1,14 @@
 #include "Scene.h"
 #include <queue>
 
+UI::UIObject* SearchTree(UI::UIObject* object, D2D1_POINT_2F mousePoint); //super simple return to later
+
 D2D1_POINT_2F GetCenter(D2D1_RECT_F rect)
 {
 	return  D2D1::Point2F(
 		rect.left + ((rect.right - rect.left) / 2),
 		rect.top + ((rect.bottom - rect.top) / 2)
 	);
-}
-
-D2D1_RECT_F CalculateRect(UI::UIObject* object, D2D1_RECT_F parent)
-{
-	D2D1_RECT_F result(parent);
-	result.left = parent.left + (parent.right - parent.left) * object->m_anchors.left;
-	result.left += object->m_offset.left;
-
-	result.right = parent.left + (parent.right - parent.left) * object->m_anchors.right;
-	result.right -= object->m_offset.right;
-
-	result.top = parent.top + (parent.bottom - parent.top) * object->m_anchors.top;
-	result.top += object->m_offset.top;
-
-	result.bottom = parent.top + (parent.bottom - parent.top) * object->m_anchors.bottom;
-	result.bottom -= object->m_offset.bottom;
-	return result;
 }
 
 HRESULT Scene::CreateScene()
@@ -59,6 +44,49 @@ void Scene::DrawScene(HWND handle, D2D1_POINT_2F mousePoint)
 	}
 }
 
+void Scene::OnMouseClick(HWND handle, D2D1_POINT_2F mousePoint)
+{
+	UI::UIObject* clicked = SearchTree(m_root, mousePoint);
+	if (clicked == NULL)
+		return; //todo
+
+	if (clicked == m_selected)
+	{
+		//do nothing
+	}
+	else
+	{
+		if (m_selected != NULL) {
+			m_selected->selected = false;
+		}
+		m_selected = clicked;
+		m_selected->selected = true;
+	}
+
+}
+
+UI::UIObject* SearchTree(UI::UIObject* object, D2D1_POINT_2F mousePoint) //super simple return to later
+{
+	if (!object->m_children.empty())
+	{
+		for (auto child : object->m_children)
+		{
+			auto hit = SearchTree(child, mousePoint);
+			if (hit != NULL)
+			{
+				return hit;
+			}
+		}
+	}
+
+	if (object->HitTest(mousePoint))
+	{
+		return object;
+	}
+	return NULL;
+}
+
+
 void Scene::DrawSceneTree(UI::UIObject* object, D2D1_RECT_F parent)
 {
 	std::queue<std::pair<UI::UIObject*, D2D1_RECT_F>> layers;
@@ -69,7 +97,7 @@ void Scene::DrawSceneTree(UI::UIObject* object, D2D1_RECT_F parent)
 		std::pair<UI::UIObject*, D2D1_RECT_F> test = layers.front();
 		layers.pop();
 
-		D2D1_RECT_F result = CalculateRect(test.first, test.second);
+		D2D1_RECT_F result = test.first->CalculateRect(test.second);
 		m_renderTarget->PushAxisAlignedClip(result, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 		DrawObject(test.first, result);
 
@@ -88,15 +116,13 @@ void Scene::DrawObject(UI::UIObject* object, D2D1_RECT_F rect) //to be obselete
 	{
 		UI::UIPanel* panel = static_cast<UI::UIPanel*>(object);
 		m_brush->SetColor(panel->m_colour);
-		m_renderTarget->FillRectangle(&rect, m_brush);
-	}
-	if (type == UI::ObjectType::Circle)
-	{
-		UI::UICircle* circle = static_cast<UI::UICircle*>(object);
-		m_brush->SetColor(circle->m_colour);
-		D2D1_ELLIPSE ellipse = D2D1::Ellipse(GetCenter(rect), 50, 50);
-		m_renderTarget->FillEllipse(&ellipse, m_brush);
 
+		if (panel->selected)
+		{
+			m_brush->SetColor(D2D1::ColorF(D2D1::ColorF::Beige));
+		}
+
+		m_renderTarget->FillRectangle(&rect, m_brush);
 	}
 }
 
