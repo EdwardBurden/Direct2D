@@ -1,7 +1,34 @@
 #include "Scene.h"
 #include <queue>
 
+
+void Scene::RecalculateTree(RECT window)
+{	
+	std::queue<std::pair<UI::UIObject*, D2D1_RECT_F>> layers;
+
+	D2D1_RECT_F parent = D2D1::RectF(window.left, window.top, window.right, window.bottom);
+
+	layers.push({ m_root,  parent });
+
+	while (!layers.empty())
+	{
+		std::pair<UI::UIObject*, D2D1_RECT_F> test = layers.front();
+		layers.pop();
+
+		auto uiObject = test.first;
+		uiObject->Transform.CalculateRect(test.second);
+		D2D1_RECT_F result = test.first->Transform.GetRect();
+
+		for (auto child : test.first->m_children)
+		{
+			layers.push({ child, result });
+		}
+	}
+}
+
+
 UI::UIObject* SearchTree(UI::UIObject* object, D2D1_POINT_2F mousePoint); //super simple return to later
+
 
 D2D1_POINT_2F GetCenter(D2D1_RECT_F rect)
 {
@@ -11,67 +38,13 @@ D2D1_POINT_2F GetCenter(D2D1_RECT_F rect)
 	);
 }
 
-HRESULT Scene::CreateScene()
-{
-	HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_factory);
-	if (FAILED(hr))
-		return -1;
-	return 0;
-}
-
-void Scene::DrawScene(HWND handle, D2D1_POINT_2F mousePoint)
-{
-	HRESULT hr = CreateGraphicsResources(handle);
-	if (FAILED(hr))
-		return;
-
-	m_renderTarget->BeginDraw();
-	m_renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::CadetBlue));
-	//setup
-	RECT rect;
-	GetClientRect(handle, &rect);
-	D2D1_RECT_F rectF = D2D1::RectF(rect.left, rect.top, rect.right, rect.bottom);
-
-	DrawSceneTree(m_root, rectF);
-	m_debugMouse.point = mousePoint;
-	m_brush->SetColor(D2D1::ColorF(m_debugMouseColour));
-	m_renderTarget->FillEllipse(&m_debugMouse, m_brush);
-	//clean
-	hr = m_renderTarget->EndDraw();
-	if (FAILED(hr))
-	{
-		//clean up for next time
-	}
-}
-
-void Scene::OnMouseClick(HWND handle, D2D1_POINT_2F mousePoint)
-{
-	UI::UIObject* clicked = SearchTree(m_root, mousePoint);
-	if (clicked == NULL)
-		return; //todo
-
-	if (clicked == m_selected)
-	{
-		//do nothing
-	}
-	else
-	{
-		if (m_selected != NULL) {
-			m_selected->selected = false;
-		}
-		m_selected = clicked;
-		m_selected->selected = true;
-	}
-
-}
-
-UI::UIObject* SearchTree(UI::UIObject* object, D2D1_POINT_2F mousePoint) //super simple return to later
+UI::UIObject* SearchTree(UI::UIObject* object, D2D1_POINT_2F point) //super simple return to later
 {
 	if (!object->m_children.empty())
 	{
 		for (auto child : object->m_children)
 		{
-			auto hit = SearchTree(child, mousePoint);
+			auto hit = SearchTree(child, point);
 			if (hit != NULL)
 			{
 				return hit;
@@ -79,106 +52,67 @@ UI::UIObject* SearchTree(UI::UIObject* object, D2D1_POINT_2F mousePoint) //super
 		}
 	}
 
-	if (object->HitTest(mousePoint))
+	if (object->m_interaction == NULL)
+		return NULL;
+
+	if (object->m_interaction->HitTest(object->Transform, point))
 	{
 		return object;
 	}
 	return NULL;
 }
 
-
-void Scene::DrawSceneTree(UI::UIObject* object, D2D1_RECT_F parent)
-{
-	std::queue<std::pair<UI::UIObject*, D2D1_RECT_F>> layers;
-	layers.push({ object,  parent });
-
-	while (!layers.empty())
-	{
-		std::pair<UI::UIObject*, D2D1_RECT_F> test = layers.front();
-		layers.pop();
-
-		D2D1_RECT_F result = test.first->CalculateRect(test.second);
-		m_renderTarget->PushAxisAlignedClip(result, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-		DrawObject(test.first, result);
-
-		for (auto child : test.first->m_children)
-		{
-			layers.push({ child, result });
-		}
-		m_renderTarget->PopAxisAlignedClip();
-	}
-}
-
-void Scene::DrawObject(UI::UIObject* object, D2D1_RECT_F rect) //to be obselete
-{
-	auto type = object->GetType();
-	if (type == UI::ObjectType::Panel)
-	{
-		UI::UIPanel* panel = static_cast<UI::UIPanel*>(object);
-		m_brush->SetColor(panel->m_colour);
-
-		if (panel->selected)
-		{
-			m_brush->SetColor(D2D1::ColorF(D2D1::ColorF::Beige));
-		}
-
-		m_renderTarget->FillRectangle(&rect, m_brush);
-	}
-}
-
-HRESULT Scene::CreateGraphicsResources(HWND handle)
-{
-	if (m_renderTarget != NULL)
-		return S_OK;
-
-	HRESULT hr = NULL;
-	RECT rect;
-	GetClientRect(handle, &rect);
-	D2D1_SIZE_U size = D2D1::SizeU(rect.right, rect.bottom); // width and height from top left 
-	hr = m_factory->CreateHwndRenderTarget(
-		D2D1::RenderTargetProperties(),
-		D2D1::HwndRenderTargetProperties(handle, size),
-		&m_renderTarget
-	);
-	if (FAILED(hr))
-		return S_FALSE;
-
-	hr = m_renderTarget->CreateSolidColorBrush(D2D1::ColorF(1, 1, 0), &m_brush);
-	if (FAILED(hr))
-		return S_FALSE;
-
-	if (FAILED(hr))
-		return S_FALSE;
-	return S_OK;
-}
-
-
 void Scene::Resize(HWND handle)
 {
-	if (m_renderTarget == NULL)
-		return;
 
-	RECT rect;
-	GetClientRect(handle, &rect);
-	D2D1_SIZE_U size = D2D1::SizeU(rect.right, rect.bottom);
-	m_renderTarget->Resize(size);
 }
 
-//0,non:1,down,2:up.3:drag
-void Scene::SetMouseState(int state)
+Scene* Scene::CreateExampleScene()
 {
-	switch (state)
-	{
-	case 0: m_debugMouseColour = D2D1::ColorF::Black;
-		break;
-	case 1: m_debugMouseColour = D2D1::ColorF::Aqua;
-		break;
-	case 2: m_debugMouseColour = D2D1::ColorF::Red;
-		break;
-	case 3: m_debugMouseColour = D2D1::ColorF::Yellow;
-		break;
-	default:
-		break;
-	}
+	Scene* scene = new Scene();
+	/*UI::UIPanel* background = new UI::UIPanel();
+	background->m_anchors = { 0.1f,0.1f,0.9f,0.9f };
+	background->m_pivot = { 0.5f,0.5f };
+	background->m_sizeDelta = { 0,0 };
+	background->m_anchoredOffset = { 0,0 };
+	background->m_colour = D2D1::ColorF(D2D1::ColorF::Black);
+	background->name = "background";
+	scene->m_root = background;
 
+	UI::UIPanel* purple = new UI::UIPanel();
+	purple->m_anchors = { 0,0,1,1 };
+	purple->m_pivot = { 0.5f,1.0f };
+	purple->m_sizeDelta = { -5,-55.0f };
+	purple->m_anchoredOffset = { 0,-2.5f };
+	purple->m_colour = D2D1::ColorF(D2D1::ColorF::BlueViolet);
+	purple->name = "purple";
+	background->m_children.push_back(purple);
+
+	UI::UIPanel* blue= new UI::UIPanel();
+	blue->m_anchors = { 0.5f,0.5f,0.5f,0.5f };
+	blue->m_pivot = { 0.5f,0.5f };
+	blue->m_sizeDelta = { 50,50 };
+	blue->m_anchoredOffset = { 0,0 };
+	blue->m_colour = D2D1::ColorF(D2D1::ColorF::Blue);
+	blue->name = "blue";
+	purple->m_children.push_back(blue);
+
+	UI::UIPanel* red= new UI::UIPanel();
+	red->m_anchors = { 0.1f,0,1,0 };
+	red->m_pivot = { 0.5f,0 };
+	red->m_sizeDelta = { -40,50 };
+	red->m_anchoredOffset = { 0,0 };
+	red->m_colour = D2D1::ColorF(D2D1::ColorF::Red);
+	red->name = "red";
+	background->m_children.push_back(red);
+
+	UI::UIPanel* yellow= new UI::UIPanel();
+	yellow->m_anchors = { 0,1,0,1 };
+	yellow->m_pivot = { 0,1 };
+	yellow->m_sizeDelta = { 100,20 };
+	yellow->m_anchoredOffset = { 2.5f,-2.5f };
+	yellow->m_colour = D2D1::ColorF(D2D1::ColorF::Yellow);
+	yellow->name = "yellow";
+	red->m_children.push_back(yellow);*/
+	return scene;
 }
