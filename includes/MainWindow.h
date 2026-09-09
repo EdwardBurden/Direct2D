@@ -9,7 +9,9 @@ class MainWindow : public BaseWindow<MainWindow> //todo move to file
 public:
 	MainWindow();
 	void PollMessages();
-	std::function<void(UINT uMsg, int x, int y, DWORD flags)> MouseInput;
+	std::function<void(POINT p)> ClickEvent; //on frame of click (left)
+	std::function<void(POINT p)> DraggingEvent; //on every frame clicked held down (left)
+	std::function<void(POINT p)> UnClickEvent; //on frame mosue released (left)
 	std::function<void(D2D1_SIZE_U rect)> WindowResize;
 	void BeginWindowPaint();
 	void EndWindowPaint();

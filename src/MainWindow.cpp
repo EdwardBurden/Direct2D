@@ -57,15 +57,29 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		InvalidateRect(m_windowHandle, NULL, FALSE);
 		return 0;
 	}
+
 	case WM_LBUTTONDOWN:
-	case WM_LBUTTONUP:
-	case WM_MOUSEMOVE:
 	{
-		if (MouseInput) 
+		POINT point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		if (DragDetect(m_windowHandle, point))
 		{
-			MouseInput(uMsg, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
+			DraggingEvent(point);
 		}
-		return 0;
+		else
+		{
+			ClickEvent(point); //simple for now
+		}
+		break;
+	}
+
+	case WM_MOUSEMOVE: 
+	{
+	//if dragigin?
+		POINT point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		if (DragDetect(m_windowHandle, point))
+		{
+			DraggingEvent(point);
+		}
 	}
 	default:
 		return DefWindowProc(m_windowHandle, uMsg, wParam, lParam);
