@@ -17,9 +17,9 @@ void Scene::RecalculateTree(RECT window)
 
 		auto uiObject = test.first;
 		uiObject->Transform.CalculateRect(test.second);
-		D2D1_RECT_F result = test.first->Transform.GetWorldRect();
+		D2D1_RECT_F result = test.first->Transform.GetRect();
 
-		for (auto child : test.first->m_children)
+		for (auto child : test.first->Children)
 		{
 			layers.push({ child, result });
 		}
@@ -34,9 +34,12 @@ UI::UIObject* Scene::SearchTree(D2D1_POINT_2F point) //super simple return to la
 
 UI::UIObject* Scene::SearchTree(UI::UIObject* object, D2D1_POINT_2F point) //super simple return to later
 {
-	if (!object->m_children.empty())
+
+
+
+	if (!object->Children.empty())
 	{
-		for (auto child : object->m_children)
+		for (auto child : object->Children)
 		{
 			auto hit = SearchTree(child, point);
 			if (hit != NULL)
@@ -46,10 +49,10 @@ UI::UIObject* Scene::SearchTree(UI::UIObject* object, D2D1_POINT_2F point) //sup
 		}
 	}
 
-	if (object->m_interaction == NULL)
+	if (object->Collider == NULL)
 		return NULL;
 
-	if (object->m_interaction->HitTest(object->Transform, point))
+	if (object->Collider->HitTest(object->Transform, point))
 	{
 		return object;
 	}

@@ -2,6 +2,8 @@
 #include "MainWindow.h"
 #include "Renderer.h"
 #include "Scene.h"
+#include "UI/UIObject.h"
+#include "UI/UIUtils.h"
 
 class App
 {
@@ -10,7 +12,9 @@ public:
 		m_window(NULL),
 		m_renderer(NULL),
 		m_scene(NULL),
-		Alive(true)
+		Alive(true),
+		m_showDebug(false),
+		m_debugHierarchy(NULL)
 	{
 	}
 
@@ -29,15 +33,13 @@ private:
 	void Debug_DrawHierarchy();
 	void Debug_DrawGizmos();
 	Scene* CreateScene();
+	Scene* CreateHierarchyView(UI::UIObject* target);
 	MainWindow* m_window;
 	Renderer* m_renderer;
 	Scene* m_scene;
-
-
-	///todo move later
-	UI::UIObject* m_hoverTarget; //thing being hoverred
-	UI::UIObject* m_pressTarget; // object that got the press down event
-	UI::UIObject* m_dragTraget; //thing last clicked
-	bool m_dragging; //is the user dragging
-	POINT m_pressStart; //where clickdown happended
+	bool m_showDebug;
+	Scene* m_debugHierarchy;
+	UI::UIObject* m_pressTarget; 
+	bool m_dragging; 
+	POINT m_pressStart;
 };

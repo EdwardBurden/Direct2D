@@ -26,7 +26,7 @@ HRESULT Renderer::CreateGraphicsResources(HWND handle) //conext
 	hr = m_factory->CreateHwndRenderTarget(
 		D2D1::RenderTargetProperties(),
 		D2D1::HwndRenderTargetProperties(handle, size),
-		&m_context.m_renderTarget
+		&m_context.RenderTarget
 	);
 	hr = pIDWriteFactory->CreateTextFormat(
 		L"Arial",
@@ -36,7 +36,7 @@ HRESULT Renderer::CreateGraphicsResources(HWND handle) //conext
 		DWRITE_FONT_STRETCH_NORMAL,
 		10.0f * 96.0f / 72.0f,
 		L"en-US",
-		&m_context.pITextFormat
+		&m_context.TextFormat
 	);
 
 	//m_context.pITextFormat.style
@@ -45,7 +45,7 @@ HRESULT Renderer::CreateGraphicsResources(HWND handle) //conext
 	if (FAILED(hr))
 		return S_FALSE;
 
-	hr = m_context.m_renderTarget->CreateSolidColorBrush(D2D1::ColorF(1, 1, 0), &m_context.m_brush);
+	hr = m_context.RenderTarget->CreateSolidColorBrush(D2D1::ColorF(1, 1, 0), &m_context.Brush);
 	if (FAILED(hr))
 		return S_FALSE;
 
@@ -62,8 +62,8 @@ void Renderer::BeginRender(HWND handle)
 	if (FAILED(hr))
 		return;
 
-	m_context.m_renderTarget->BeginDraw();
-	m_context.m_renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::CadetBlue));
+	m_context.RenderTarget->BeginDraw();
+	m_context.RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::CadetBlue));
 }
 
 void Renderer::RenderUIObject(UI::UIObject* uiObject)
@@ -76,7 +76,7 @@ void Renderer::RenderUIObject(UI::UIObject* uiObject)
 		UI::UIObject* next = queue.front();
 		queue.pop();
 		DrawObject(next);
-		for (auto child : next->m_children)
+		for (auto child : next->Children)
 		{
 			queue.push( child );
 		}
@@ -93,7 +93,7 @@ void Renderer::DrawObject(UI::UIObject* object)
 
 void Renderer::EndRender()
 {
-	HRESULT hr = m_context.m_renderTarget->EndDraw();
+	HRESULT hr = m_context.RenderTarget->EndDraw();
 	if (FAILED(hr))
 	{
 		//clean up for next time
@@ -102,11 +102,11 @@ void Renderer::EndRender()
 
 void Renderer::Resize(HWND handle)
 {
-	if (m_context.m_renderTarget == NULL)
+	if (m_context.RenderTarget == NULL)
 		return;
 
 	RECT rect;
 	GetClientRect(handle, &rect);
 	D2D1_SIZE_U size = D2D1::SizeU(rect.right, rect.bottom);
-	m_context.m_renderTarget->Resize(size);
+	m_context.RenderTarget->Resize(size);
 }

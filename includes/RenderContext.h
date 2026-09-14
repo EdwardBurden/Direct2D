@@ -6,14 +6,10 @@
 
 struct RenderContext
 {
-	RenderContext() : pITextFormat(NULL),
-		m_renderTarget(NULL),
-		m_brush(NULL),
-		Initialised(false) {
-	}
+	RenderContext() : TextFormat(NULL), RenderTarget(NULL), Brush(NULL), Initialised(false) {}
 
 	bool Initialised;
-	IDWriteTextFormat* pITextFormat;
-	ID2D1HwndRenderTarget* m_renderTarget;
-	ID2D1SolidColorBrush* m_brush;
+	IDWriteTextFormat* TextFormat;
+	ID2D1HwndRenderTarget* RenderTarget;
+	ID2D1SolidColorBrush* Brush;
 };
