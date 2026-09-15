@@ -2,20 +2,21 @@
 #include <vector>
 #include <functional>
 #include <string>
-#include "UIRender.h"
+#include "UI/Graphic.h"
+#include "UI/RectTransform.h"
 
 namespace UI
 {
-	struct UIInteractionCollider
+	struct Collider
 	{
-		bool HitTest(const UIRectTransform& transform, D2D1_POINT_2F test)
+		bool HitTest(const RectTransform& transform, D2D1_POINT_2F test)
 		{
 			auto rect = transform.GetRect();
 			return
 				test.x >= rect.left &&
 				test.x <= rect.right &&
 				test.y >= rect.top &&
-				test.y <= rect.bottom; //simple version for now
+				test.y <= rect.bottom;
 		}
 
 		std::function<void(POINT p)> OnPointerDown;
@@ -23,15 +24,15 @@ namespace UI
 		std::function<void(POINT p)> OnPointerDrag;
 	};
 
-	struct UIObject
+	struct Node
 	{
 		const wchar_t* DebugName;
-		UIRectTransform Transform;	//never null
-		UIBaseRender* Render;//nullable
-		UIInteractionCollider* Collider;
-		UIObject* Parent;
-		std::vector<UIObject*> Children;
-		UIObject(const wchar_t* name, UIObject* parent) : DebugName(name), Parent(parent), Render(NULL), Collider(NULL)
+		RectTransform Transform;
+		Graphic* Graphic;
+		Collider* Collider;
+		Node* Parent;
+		std::vector<Node*> Children;
+		Node(const wchar_t* name, Node* parent) : DebugName(name), Parent(parent), Graphic(NULL), Collider(NULL)
 		{
 			if (Parent == NULL)
 				return;
@@ -39,9 +40,9 @@ namespace UI
 			Parent->Children.push_back(this);
 		}
 		
-		~UIObject()
+		~Node()
 		{
-			delete Render;
+			delete Graphic;
 			delete Collider;
 			for (auto child : Children)
 			{

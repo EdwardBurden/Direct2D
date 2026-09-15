@@ -1,20 +1,21 @@
+#pragma once
 #include <string>
-#include "UIRectTransform.h"
-#include "RenderContext.h"
+#include "UI/RectTransform.h"
+#include "UI/RenderContext.h"
 
 namespace UI
 {
-	struct UIBaseRender
+	struct Graphic
 	{
-		virtual void Draw(const UIRectTransform& transform, RenderContext& context) = 0;
-		virtual ~UIBaseRender() = default;
+		virtual void Draw(const RectTransform& transform, RenderContext& context) = 0;
+		virtual ~Graphic() = default;
 	};
 
-	struct UICircleRender : public UIBaseRender
+	struct CircleGraphic : public Graphic
 	{
-		UICircleRender(D2D1::ColorF::Enum colour) :m_colour(colour), m_size(5) {}
+		CircleGraphic(D2D1::ColorF::Enum colour) :m_colour(colour), m_size(5) {}
 
-		void Draw(const UIRectTransform& transform, RenderContext& context) override
+		void Draw(const RectTransform& transform, RenderContext& context) override
 		{
 			context.Brush->SetColor(D2D1::ColorF(m_colour));
 			D2D1_RECT_F rect = transform.GetRect();
@@ -26,11 +27,11 @@ namespace UI
 		int m_size;
 	};
 
-	struct UITextRender : public UIBaseRender
+	struct TextGraphic : public Graphic
 	{
-		UITextRender(const wchar_t* text) : m_text(text), m_textColour(D2D1::ColorF::Black) {}
+		TextGraphic(const wchar_t* text) : m_text(text), m_textColour(D2D1::ColorF::Black) {}
 
-		void Draw(const UIRectTransform& transform, RenderContext& context) override
+		void Draw(const RectTransform& transform, RenderContext& context) override
 		{
 			context.Brush->SetColor(D2D1::ColorF(m_textColour));
 			context.RenderTarget->DrawText(
@@ -47,11 +48,11 @@ namespace UI
 		std::wstring m_text;
 	};
 
-	struct UISquareRender : public UIBaseRender
+	struct SquareGraphic : public Graphic
 	{
-		UISquareRender(D2D1::ColorF::Enum colour) :m_colour(colour) {}
+		SquareGraphic(D2D1::ColorF::Enum colour) :m_colour(colour) {}
 
-		void Draw(const UIRectTransform& transform, RenderContext& context) override
+		void Draw(const RectTransform& transform, RenderContext& context) override
 		{
 			context.Brush->SetColor(D2D1::ColorF(m_colour));
 			D2D1_RECT_F rect = transform.GetRect();

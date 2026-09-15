@@ -1,11 +1,12 @@
+#pragma once
 #include <d2d1.h>
 
 namespace UI
 {
-	struct UIRectTransform
+	struct RectTransform
 	{
 	public:
-		UIRectTransform( ) : Anchors({ 0.5,0.5,0.5,0.5 }), Pivot({ 0.5,0.5 }), AnchoredOffset({ 0,0 }), SizeDelta({ 0,0 }), m_rectPosition({ 0,0,0,0 }) {}
+		RectTransform( ) : Anchors({ 0.5,0.5,0.5,0.5 }), Pivot({ 0.5,0.5 }), AnchoredOffset({ 0,0 }), SizeDelta({ 0,0 }), m_rectPosition({ 0,0,0,0 }) {}
 		D2D1_RECT_F GetRect() const { return m_rectPosition; }
 		void CalculateRect(D2D1_RECT_F parent)
 		{

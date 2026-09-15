@@ -1,27 +1,27 @@
 #include "App.h"
 #include <iostream>
-#include <WindowsUtils.h>
+#include "Window/WindowsUtils.h"
 #include <stack>
+#include <UI/Utils.h>
 
-float DPIScale::scale = 1.0f;
-static  void thing(UI::UIObject* obj);
-
+float Window::DPIScale::scale = 1.0f;
 
 int App::StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
 	m_scene = CreateScene();
 
-	m_renderer = new Renderer();
+	m_renderer = new UI::Renderer();
 
 
-	m_window = new MainWindow();
+	m_window = new Window::MainWindow();
 
 
 	//Callbacks
 	m_window->ClickEvent = [this](POINT p) { OnMouseClick(p); };
 	m_window->DraggingEvent = [this](POINT p) { OnDrag(p); };
 	m_window->UnClickEvent = [this](POINT p) { OnRelease(p); };
-	m_window->WindowResize = [this](D2D1_SIZE_U rect) {	OnWindowResize(rect); };
+	m_window->WindowResize = [this](RECT rect) { OnWindowResize(rect); };
+	m_window->WindowClosed = [this]() {Alive = false; };
 
 	if (!m_window->Create(L"Main", WS_OVERLAPPEDWINDOW))
 		return 1;
@@ -117,7 +117,7 @@ void App::RenderLoop()
 
 	m_window->BeginWindowPaint();
 	m_renderer->BeginRender(m_window->GetWindowHandle());
-	m_renderer->RenderUIObject(m_scene->m_root); // whole scene
+	m_renderer->RenderNode(m_scene->m_root); // whole scene
 
 
 
@@ -134,8 +134,9 @@ void App::RenderLoop()
 	m_window->EndWindowPaint();
 }
 
-void App::OnWindowResize(D2D1_SIZE_U rect)
+void App::OnWindowResize(RECT rect)
 {
+	//D2D1_SIZE_U size = D2D1::SizeU(rect.right, rect.bottom); todo
 	std::cout << "Resize";
 	m_scene->Resize(m_window->GetWindowHandle());
 	m_renderer->Resize(m_window->GetWindowHandle());
@@ -144,6 +145,7 @@ void App::OnWindowResize(D2D1_SIZE_U rect)
 
 void App::Shutdown()
 {
+	//shutdown here
 }
 
 void App::Debug_DrawHierarchy()
@@ -151,7 +153,7 @@ void App::Debug_DrawHierarchy()
 	RECT rect;
 	GetClientRect(m_window->GetWindowHandle(), &rect);
 	m_debugHierarchy->RecalculateTree(rect);
-	m_renderer->RenderUIObject(m_debugHierarchy->m_root); // whole scene
+	m_renderer->RenderNode(m_debugHierarchy->m_root); // whole scene
 
 
 	//TODO THIS IS THE FOCUS, can be simple to begin with, just the selected items info
@@ -164,24 +166,24 @@ void App::Debug_DrawGizmos()
 }
 
 
-Scene* App::CreateScene()
+UI::Scene* App::CreateScene()
 {
-	Scene* scene = new Scene();
-	UI::UIObject* root = UI::CreateBackground();
+	UI::Scene* scene = new UI::Scene();
+	UI::Node* root = UI::CreateBackground();
 	scene->m_root = root;
 
 	auto header = UI::CreatePanel(root, L"Header", D2D1::ColorF::Blue, { 0,0,1,0 }, { 0, 100 });
-	auto headerInner = UI::CreatePanel(header, L"Header Inner", D2D1::ColorF::BlueViolet, { 0,0,1,1 }, { -10, -10 }, {5,5});
+	auto headerInner = UI::CreatePanel(header, L"Header Inner", D2D1::ColorF::BlueViolet, { 0,0,1,1 }, { -10, -10 }, { 5,5 });
 	auto headerTop = UI::CreatePanel(headerInner, L"Header Top", D2D1::ColorF::DodgerBlue, { 0,0,1,0.5 });
 	auto headerBottom = UI::CreatePanel(headerInner, L"Header Bottom", D2D1::ColorF::DarkBlue, { 0,0.5,1,1 });
 	auto button1 = UI::CreatePanel(headerTop, L"Button 1", D2D1::ColorF::DarkSlateBlue, { 0,0,0,0 }, { 40,40 });
-	auto button2 = UI::CreatePanel(headerTop, L"Button 2", D2D1::ColorF::CadetBlue, { 0,0,0,0 }, { 40,40 }, {50,0});
+	auto button2 = UI::CreatePanel(headerTop, L"Button 2", D2D1::ColorF::CadetBlue, { 0,0,0,0 }, { 40,40 }, { 50,0 });
 
 	auto button3 = UI::CreatePanel(headerBottom, L"Button 3", D2D1::ColorF::CornflowerBlue, { 0,0,0,0 }, { 40,40 });
 	auto button4 = UI::CreatePanel(headerBottom, L"Button 4", D2D1::ColorF::DeepSkyBlue, { 0,0,0,0 }, { 40,40 }, { 50,0 });
 
 
-	auto body = UI::CreatePanel(root, L"Body", D2D1::ColorF::DarkRed, { 0,0,1,1 }, { 0,-100 }, { 0,0 }, {0,1});
+	auto body = UI::CreatePanel(root, L"Body", D2D1::ColorF::DarkRed, { 0,0,1,1 }, { 0,-100 }, { 0,0 }, { 0,1 });
 	auto p1 = UI::CreatePanel(body, L"Top left", D2D1::ColorF::IndianRed, { 0,0,0.5,0.5 });
 	auto p2 = UI::CreatePanel(body, L"Top Right", D2D1::ColorF::MediumVioletRed, { 0.5,0,1,0.5 });
 	auto p3 = UI::CreatePanel(body, L"Bottom left", D2D1::ColorF::PaleVioletRed, { 0,0.5,0.5,1 });
@@ -192,17 +194,17 @@ Scene* App::CreateScene()
 }
 
 
-Scene* App::CreateHierarchyView(UI::UIObject* target)
+UI::Scene* App::CreateHierarchyView(UI::Node* target) //todo move into ui?
 {
-	Scene* scene = new Scene();
-	UI::UIObject* root = new UI::UIObject(L"Root", NULL);
+	UI::Scene* scene = new UI::Scene();
+	UI::Node* root = new UI::Node(L"Root", NULL);
 	scene->m_root = root;
 	root->Transform.Anchors = { 1,0,1,1 };
 	root->Transform.Pivot = { 1,1 };
 	root->Transform.SizeDelta = { 200,0 };
 	root->Transform.AnchoredOffset = { 0,0 };
-	root->Render = new UI::UISquareRender(D2D1::ColorF::Green);
-	std::stack<UI::UIObject*> hierarchy;
+	root->Graphic = new UI::SquareGraphic(D2D1::ColorF::Green);
+	std::stack<UI::Node*> hierarchy;
 	auto t = target;
 	do
 	{
@@ -214,7 +216,7 @@ Scene* App::CreateHierarchyView(UI::UIObject* target)
 	int indent = 0;
 	while (!hierarchy.empty())
 	{
-		UI::UIObject* top = hierarchy.top();
+		UI::Node* top = hierarchy.top();
 		auto p1 = UI::CreateHierarchyPanel(root, top->DebugName, D2D1::ColorF::LightYellow);
 		p1->Transform.AnchoredOffset.y = height;
 		p1->Transform.SizeDelta.x = -indent;
@@ -223,10 +225,4 @@ Scene* App::CreateHierarchyView(UI::UIObject* target)
 		hierarchy.pop();
 	}
 	return scene;
-}
-
-static  void thing(UI::UIObject* obj)
-{
-	std::cout << "Click";
-
 }

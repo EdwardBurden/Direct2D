@@ -1,10 +1,8 @@
 #pragma once
-#include "MainWindow.h"
-#include "Renderer.h"
-#include "Scene.h"
-#include "UI/UIObject.h"
-#include "UI/UIUtils.h"
-
+#include "Window/MainWindow.h"
+#include "UI/Renderer.h"
+#include "UI/Scene.h"
+#include "UI/Node.h"
 class App
 {
 public:
@@ -20,7 +18,7 @@ public:
 
 
 	int StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow);
-	void OnWindowResize(D2D1_SIZE_U rect); // listen function
+	void OnWindowResize(RECT rect); // listen function
 	bool Update();
 	void Shutdown();
 	bool Alive;
@@ -32,14 +30,14 @@ private:
 
 	void Debug_DrawHierarchy();
 	void Debug_DrawGizmos();
-	Scene* CreateScene();
-	Scene* CreateHierarchyView(UI::UIObject* target);
-	MainWindow* m_window;
-	Renderer* m_renderer;
-	Scene* m_scene;
+	UI::Scene* CreateScene();
+	UI::Scene* CreateHierarchyView(UI::Node* target);
+	Window::MainWindow* m_window;
+	UI::Renderer* m_renderer;
+	UI::Scene* m_scene;
 	bool m_showDebug;
-	Scene* m_debugHierarchy;
-	UI::UIObject* m_pressTarget; 
+	UI::Scene* m_debugHierarchy;
+	UI::Node* m_pressTarget;
 	bool m_dragging; 
 	POINT m_pressStart;
 };
