@@ -61,6 +61,7 @@ namespace Window
 		case WM_LBUTTONDOWN:
 		{
 			POINT point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+			
 			if (DragDetect(m_windowHandle, point))
 			{
 				DraggingEvent(point);

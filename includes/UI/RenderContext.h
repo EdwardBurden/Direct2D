@@ -8,9 +8,11 @@ namespace UI
 {
 	struct RenderContext
 	{
-		RenderContext() : TextFormat(NULL), RenderTarget(NULL), Brush(NULL), Initialised(false) {}
+		RenderContext() : m_factory(NULL), pIDWriteFactory(NULL), TextFormat(NULL), RenderTarget(NULL), Brush(NULL), Initialised(false) {}
 
 		bool Initialised;
+		ID2D1Factory* m_factory;
+		IDWriteFactory* pIDWriteFactory;
 		IDWriteTextFormat* TextFormat;
 		ID2D1HwndRenderTarget* RenderTarget;
 		ID2D1SolidColorBrush* Brush;

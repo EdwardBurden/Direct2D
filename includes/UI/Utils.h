@@ -24,6 +24,30 @@ namespace UI
 		return panel;
 	}
 
+	static Node* CreateButton(Node* parent, const wchar_t* name, D2D1::ColorF::Enum color, D2D1_RECT_F anchors = { 0,0,1,1 }, D2D1_POINT_2F size = { 0,0 }, D2D1_POINT_2F offset = { 0,0 }, D2D1_POINT_2F pivot = { 0.0f,0.0f })
+	{
+		Node* panel = new Node(name, parent);
+		panel->Transform.Anchors = anchors;
+		panel->Transform.Pivot = pivot;
+		panel->Transform.SizeDelta = size;
+		panel->Transform.AnchoredOffset = offset;
+		panel->Graphic = new CircleGraphic(color, 20);
+		panel->Collider = new Collider();
+		return panel;
+	}
+
+	static Node* CreateText(Node* parent, const wchar_t* name, const wchar_t* text, D2D1_RECT_F anchors = { 0,0,1,1 }, D2D1_POINT_2F size = { 0,0 }, D2D1_POINT_2F offset = { 0,0 }, D2D1_POINT_2F pivot = { 0.5f,0.5f })
+	{
+		Node* panel = new Node(name, parent);
+		panel->Transform.Anchors = anchors;
+		panel->Transform.Pivot = pivot;
+		panel->Transform.SizeDelta = size;
+		panel->Transform.AnchoredOffset = offset;
+		panel->Graphic = new TextGraphic(text);
+		panel->Collider = new Collider();
+		return panel;
+	}
+
 	static Node* CreateHierarchyPanel(Node* parent, const wchar_t* name, D2D1::ColorF::Enum color)
 	{
 		Node* panel = new Node(name, parent);

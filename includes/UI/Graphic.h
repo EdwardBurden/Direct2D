@@ -5,15 +5,18 @@
 
 namespace UI
 {
-	struct Graphic
+	class Graphic
 	{
+	public:
 		virtual void Draw(const RectTransform& transform, RenderContext& context) = 0;
+		virtual void TransformUpdated() {}
 		virtual ~Graphic() = default;
 	};
 
-	struct CircleGraphic : public Graphic
+	class CircleGraphic : public Graphic
 	{
-		CircleGraphic(D2D1::ColorF::Enum colour) :m_colour(colour), m_size(5) {}
+	public:
+		CircleGraphic(D2D1::ColorF::Enum colour, size_t size) :m_colour(colour), m_size(size) {}
 
 		void Draw(const RectTransform& transform, RenderContext& context) override
 		{
@@ -27,29 +30,64 @@ namespace UI
 		int m_size;
 	};
 
-	struct TextGraphic : public Graphic
+	class TextGraphic : public Graphic
 	{
-		TextGraphic(const wchar_t* text) : m_text(text), m_textColour(D2D1::ColorF::Black) {}
+	public:
+		TextGraphic(const wchar_t* text) : m_layout(NULL), m_text(text), m_textColour(D2D1::ColorF::Black) , m_autoSize(true), m_fontSize(15)
+		{
+		
+		}
 
 		void Draw(const RectTransform& transform, RenderContext& context) override
 		{
+			if (m_layout == NULL)
+			{
+				HRESULT hr = context.pIDWriteFactory->CreateTextLayout(
+					m_text.c_str(),
+					static_cast<UINT32>(m_text.length()),
+					context.TextFormat,
+					1000,
+					1000,
+					&m_layout
+					);
+			}
+			D2D1_RECT_F	 rect = transform.GetRect();
+			m_layout->SetMaxHeight(rect.bottom - rect.top);
+			m_layout->SetMaxWidth(rect.right - rect.left);
 			context.Brush->SetColor(D2D1::ColorF(m_textColour));
-			context.RenderTarget->DrawText(
-				m_text.c_str(),
-				static_cast<UINT32>(m_text.length()),
-				context.TextFormat,
-				transform.GetRect(),
-				context.Brush
+			DWRITE_TEXT_RANGE range{ 0,static_cast<UINT32>(m_text.length()) };
+	
+
+
+			m_layout->SetFontSize(m_fontSize, range);
+			D2D1_POINT_2F point = { transform.GetRect().left,transform.GetRect().top };
+	
+
+			context.RenderTarget->DrawTextLayout(
+				point,
+				m_layout,
+				context.Brush,
+				D2D1_DRAW_TEXT_OPTIONS_CLIP
 			);
+		}
+
+		void TransformUpdated() override 
+		{
+
+
 		}
 
 	private:
 		D2D1::ColorF::Enum m_textColour;
 		std::wstring m_text;
+		float m_fontSize;
+		bool m_autoSize;
+		IDWriteTextLayout* m_layout;
 	};
 
-	struct SquareGraphic : public Graphic
+	class SquareGraphic : public Graphic
 	{
+	public:
 		SquareGraphic(D2D1::ColorF::Enum colour) :m_colour(colour) {}
 
 		void Draw(const RectTransform& transform, RenderContext& context) override

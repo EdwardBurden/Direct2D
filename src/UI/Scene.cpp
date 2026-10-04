@@ -5,22 +5,21 @@ namespace UI
 {
 	void Scene::RecalculateTree(RECT window)
 	{
+		// Create Queue of nodes to process along with their parentRect.
 		std::queue<std::pair<UI::Node*, D2D1_RECT_F>> layers;
-
-		D2D1_RECT_F parent = D2D1::RectF(window.left, window.top, window.right, window.bottom);
-
+		D2D1_RECT_F parent = { window.left, window.top, window.right, window.bottom };
+		//Place the Root and window rect as the first node to process.
 		layers.push({ m_root,  parent });
 
+		// Each node in the tree will be processed by depth layer in the tree first.
 		while (!layers.empty())
 		{
-			std::pair<UI::Node*, D2D1_RECT_F> test = layers.front();
+			auto& [node, parentRect] = layers.front();
 			layers.pop();
 
-			auto uiObject = test.first;
-			uiObject->Transform.CalculateRect(test.second);
-			D2D1_RECT_F result = test.first->Transform.GetRect();
-
-			for (auto child : test.first->Children)
+			// Calculate the parent node, then place the calculated rect on the queue along with each child node.
+			D2D1_RECT_F result = node->Transform.CalculateRect(parentRect);
+			for (auto child : node->Children)
 			{
 				layers.push({ child, result });
 			}
@@ -28,33 +27,30 @@ namespace UI
 	}
 
 
-	UI::Node* Scene::SearchTree(D2D1_POINT_2F point) //super simple return to later
+	UI::Node* Scene::SearchTreeForCollision(D2D1_POINT_2F point)
 	{
-		return SearchTree(m_root, point);
+		return SearchNodeForCollision(m_root, point);
 	}
 
-	UI::Node* Scene::SearchTree(UI::Node* object, D2D1_POINT_2F point) //super simple return to later
+	UI::Node* Scene::SearchNodeForCollision(UI::Node* node, D2D1_POINT_2F point)
 	{
-		if (!object->Children.empty())
+		if (node == nullptr)
+			return nullptr;
+
+		// Get reverse order of the way children are drawn.
+		for (std::vector<UI::Node*>::reverse_iterator it = node->Children.rbegin(); it != node->Children.rend(); ++it)
 		{
-			for (auto child : object->Children)
-			{
-				auto hit = SearchTree(child, point);
-				if (hit != NULL)
-				{
-					return hit;
-				}
-			}
+			// Recursively search for colider passed hit test.
+			UI::Node* nodeHit = SearchNodeForCollision(*it, point);
+			if (nodeHit != NULL)
+				return nodeHit;
 		}
 
-		if (object->Collider == NULL)
-			return NULL;
+		// Check point is in the colliders area.
+		if (node->Collider != nullptr && node->Collider->HitTest(node->Transform, point))
+			return node;
 
-		if (object->Collider->HitTest(object->Transform, point))
-		{
-			return object;
-		}
-		return NULL;
+		return nullptr;
 	}
 
 	void Scene::Resize(HWND handle)

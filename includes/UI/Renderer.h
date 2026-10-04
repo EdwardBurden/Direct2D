@@ -21,9 +21,6 @@ namespace UI
 		HRESULT CreateGraphicsResources(HWND handle);
 
 		void DrawNode(Node* node);
-		ID2D1Factory* m_factory;
-		IDWriteFactory* pIDWriteFactory = NULL;
-
 		RenderContext m_context;
 	};
 }

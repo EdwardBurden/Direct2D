@@ -4,19 +4,13 @@
 #include <stack>
 #include <UI/Utils.h>
 
-float Window::DPIScale::scale = 1.0f;
-
 int App::StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
+	m_window = new Window::MainWindow();
 	m_scene = CreateScene();
-
 	m_renderer = new UI::Renderer();
 
-
-	m_window = new Window::MainWindow();
-
-
-	//Callbacks
+	// Register callbacks from the window class.
 	m_window->ClickEvent = [this](POINT p) { OnMouseClick(p); };
 	m_window->DraggingEvent = [this](POINT p) { OnDrag(p); };
 	m_window->UnClickEvent = [this](POINT p) { OnRelease(p); };
@@ -49,8 +43,10 @@ bool App::Update()
 
 void App::OnMouseClick(POINT p)
 {
-	auto point = D2D1::Point2F(p.x, p.y);
-	m_pressTarget = m_scene->SearchTree(point);
+	D2D1_POINT_2F dipPt = D2D1::Point2F(
+		p.x / Window::DPIScale::Scale,
+		p.y / Window::DPIScale::Scale);
+	m_pressTarget = m_scene->SearchTreeForCollision(dipPt);
 
 	m_showDebug = m_pressTarget != NULL;
 
@@ -101,33 +97,17 @@ void App::RenderLoop()
 {
 	RECT rect;
 	GetClientRect(m_window->GetWindowHandle(), &rect);
-
-	if (m_showDebug)
-	{
-		//m_scene->m_root->Transform.AnchoredOffset.x = -100;
-		m_scene->m_root->Transform.SizeDelta.x = -200;
-	}
-	else
-	{
-		//m_scene->m_root->Transform.AnchoredOffset.x = 0;
-		m_scene->m_root->Transform.SizeDelta.x = 0;
-	}
-
+	m_scene->m_root->Transform.SizeDelta.x = m_showDebug ? -200 : 0;
 	m_scene->RecalculateTree(rect);
 
 	m_window->BeginWindowPaint();
 	m_renderer->BeginRender(m_window->GetWindowHandle());
-	m_renderer->RenderNode(m_scene->m_root); // whole scene
+	m_renderer->RenderNode(m_scene->m_root);
 
-
-
-
-	//debug
 	if (m_showDebug)
 	{
 		Debug_DrawHierarchy();
 		Debug_DrawGizmos();
-		//
 	}
 
 	m_renderer->EndRender();
@@ -173,18 +153,18 @@ UI::Scene* App::CreateScene()
 	scene->m_root = root;
 
 	auto header = UI::CreatePanel(root, L"Header", D2D1::ColorF::Blue, { 0,0,1,0 }, { 0, 100 });
-	auto headerInner = UI::CreatePanel(header, L"Header Inner", D2D1::ColorF::BlueViolet, { 0,0,1,1 }, { -10, -10 }, { 5,5 });
+	auto headerInner = UI::CreatePanel(header, L"Header Inner", D2D1::ColorF::BlueViolet, { 0,0,1,1 }, { -10, -10 }, { 5,2.5f });
 	auto headerTop = UI::CreatePanel(headerInner, L"Header Top", D2D1::ColorF::DodgerBlue, { 0,0,1,0.5 });
 	auto headerBottom = UI::CreatePanel(headerInner, L"Header Bottom", D2D1::ColorF::DarkBlue, { 0,0.5,1,1 });
-	auto button1 = UI::CreatePanel(headerTop, L"Button 1", D2D1::ColorF::DarkSlateBlue, { 0,0,0,0 }, { 40,40 });
-	auto button2 = UI::CreatePanel(headerTop, L"Button 2", D2D1::ColorF::CadetBlue, { 0,0,0,0 }, { 40,40 }, { 50,0 });
+	auto button1 = UI::CreateButton(headerTop, L"Button 1", D2D1::ColorF::DarkSlateBlue, { 0,0,0,0 }, { 40,40 }, { 5,2.5f });
+	auto button2 = UI::CreatePanel(headerTop, L"Button 2", D2D1::ColorF::CadetBlue, { 0,0,0,0 }, { 40,40 }, { 50,2.5f });
 
-	auto button3 = UI::CreatePanel(headerBottom, L"Button 3", D2D1::ColorF::CornflowerBlue, { 0,0,0,0 }, { 40,40 });
-	auto button4 = UI::CreatePanel(headerBottom, L"Button 4", D2D1::ColorF::DeepSkyBlue, { 0,0,0,0 }, { 40,40 }, { 50,0 });
-
+	auto button3 = UI::CreateButton(headerBottom, L"Button 3", D2D1::ColorF::CornflowerBlue, { 0,0,0,0 }, { 40,40 }, { 5,2.5f });
+	auto button4 = UI::CreatePanel(headerBottom, L"Button 4", D2D1::ColorF::DeepSkyBlue, { 0,0,0,0 }, { 40,40 }, { 50,2.5f });
 
 	auto body = UI::CreatePanel(root, L"Body", D2D1::ColorF::DarkRed, { 0,0,1,1 }, { 0,-100 }, { 0,0 }, { 0,1 });
 	auto p1 = UI::CreatePanel(body, L"Top left", D2D1::ColorF::IndianRed, { 0,0,0.5,0.5 });
+	auto t1 = UI::CreateText(p1, L"Top left Text", L"this is a very long piece of text which should wrap around inside its container, try resizing the window to see it in action");
 	auto p2 = UI::CreatePanel(body, L"Top Right", D2D1::ColorF::MediumVioletRed, { 0.5,0,1,0.5 });
 	auto p3 = UI::CreatePanel(body, L"Bottom left", D2D1::ColorF::PaleVioletRed, { 0,0.5,0.5,1 });
 	auto p4 = UI::CreatePanel(body, L"Bottom Right", D2D1::ColorF::OrangeRed, { 0.5,0.5, 1,1 });
@@ -192,7 +172,6 @@ UI::Scene* App::CreateScene()
 
 	return scene;
 }
-
 
 UI::Scene* App::CreateHierarchyView(UI::Node* target) //todo move into ui?
 {

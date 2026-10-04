@@ -1,14 +1,15 @@
 #include "UI/Renderer.h"
+#include "WIndow/WindowsUtils.h"
 #include <queue>
 
 namespace UI {
 	BOOL Renderer::Create(HWND handle)
 	{
-		HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_factory);
+		HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_context.m_factory);
 		if (FAILED(hr))
 			return -1;
 
-		hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&pIDWriteFactory));
+		hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&m_context.pIDWriteFactory));
 		if (FAILED(hr))
 			return -1;
 
@@ -25,12 +26,18 @@ namespace UI {
 		RECT rect;
 		GetClientRect(handle, &rect);
 		D2D1_SIZE_U size = D2D1::SizeU(rect.right, rect.bottom); // width and height from top left 
-		hr = m_factory->CreateHwndRenderTarget(
+		hr = m_context.m_factory->CreateHwndRenderTarget(
 			D2D1::RenderTargetProperties(),
 			D2D1::HwndRenderTargetProperties(handle, size),
 			&m_context.RenderTarget
 		);
-		hr = pIDWriteFactory->CreateTextFormat(
+		if (FAILED(hr))
+			return S_FALSE;
+
+		float dpi = GetDpiForWindow(handle);
+		m_context.RenderTarget->SetDpi((float)dpi, (float)dpi);
+
+		hr = m_context.pIDWriteFactory->CreateTextFormat(
 			L"Arial",
 			NULL,
 			DWRITE_FONT_WEIGHT_NORMAL,
@@ -41,16 +48,11 @@ namespace UI {
 			&m_context.TextFormat
 		);
 
-		//m_context.pITextFormat.style
-
 
 		if (FAILED(hr))
 			return S_FALSE;
 
 		hr = m_context.RenderTarget->CreateSolidColorBrush(D2D1::ColorF(1, 1, 0), &m_context.Brush);
-		if (FAILED(hr))
-			return S_FALSE;
-
 		if (FAILED(hr))
 			return S_FALSE;
 

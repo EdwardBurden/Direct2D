@@ -13,8 +13,8 @@ namespace UI
 
 		void RecalculateTree(RECT window);
 		void Resize(HWND handle);
-		UI::Node* SearchTree(D2D1_POINT_2F point);
-		UI::Node* SearchTree(UI::Node* node, D2D1_POINT_2F point);
+		UI::Node* SearchTreeForCollision(D2D1_POINT_2F point);
+		UI::Node* SearchNodeForCollision(UI::Node* node, D2D1_POINT_2F point);
 		UI::Node* m_root;
 	};
 }

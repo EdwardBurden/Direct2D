@@ -3,12 +3,12 @@
 
 namespace UI
 {
-	struct RectTransform
+	class RectTransform
 	{
 	public:
 		RectTransform( ) : Anchors({ 0.5,0.5,0.5,0.5 }), Pivot({ 0.5,0.5 }), AnchoredOffset({ 0,0 }), SizeDelta({ 0,0 }), m_rectPosition({ 0,0,0,0 }) {}
 		D2D1_RECT_F GetRect() const { return m_rectPosition; }
-		void CalculateRect(D2D1_RECT_F parent)
+		D2D1_RECT_F CalculateRect(D2D1_RECT_F parent)
 		{
 			D2D1_POINT_2F parentSize = GetRectSize(parent);
 			D2D1_RECT_F area;
@@ -29,6 +29,7 @@ namespace UI
 			m_rectPosition.right = m_rectPosition.left + size.x;
 			m_rectPosition.top = pivotPoint.y - (Pivot.y * size.y);
 			m_rectPosition.bottom = m_rectPosition.top + size.y;
+			return m_rectPosition;
 		}
 
 		D2D1_POINT_2F WorldToAnchoredOffset(D2D1_POINT_2F worldPoint, D2D1_RECT_F parent) const

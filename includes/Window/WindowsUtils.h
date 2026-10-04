@@ -2,14 +2,13 @@ namespace Window
 {
     class DPIScale
     {
-        static float scale;
-
     public:
+        inline static float Scale = 1;
         static void Initialize(HWND hwnd)
         {
-            scale = 1.0f;
+            Scale = 1.0f;
             float dpi = GetDpiForWindow(hwnd);
-            scale = dpi / 96.0f;
+            Scale = dpi / 96.0f;
         }
     };
 }

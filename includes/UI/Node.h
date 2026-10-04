@@ -7,8 +7,10 @@
 
 namespace UI
 {
-	struct Collider
+	class Collider
 	{
+	public:
+		virtual ~Collider() = default;
 		bool HitTest(const RectTransform& transform, D2D1_POINT_2F test)
 		{
 			auto rect = transform.GetRect();
@@ -24,17 +26,22 @@ namespace UI
 		std::function<void(POINT p)> OnPointerDrag;
 	};
 
-	struct Node
+	class Node
 	{
+	public:
 		const wchar_t* DebugName;
 		RectTransform Transform;
 		Graphic* Graphic;
 		Collider* Collider;
 		Node* Parent;
 		std::vector<Node*> Children;
-		Node(const wchar_t* name, Node* parent) : DebugName(name), Parent(parent), Graphic(NULL), Collider(NULL)
+
+		Node(const Node& node) = delete;
+		Node& operator=(const Node& node) = delete;
+
+		Node(const wchar_t* name, Node* parent) : DebugName(name), Parent(parent), Graphic(nullptr), Collider(nullptr)
 		{
-			if (Parent == NULL)
+			if (Parent == nullptr)
 				return;
 
 			Parent->Children.push_back(this);
@@ -44,15 +51,12 @@ namespace UI
 		{
 			delete Graphic;
 			delete Collider;
+
 			for (auto child : Children)
 			{
 				delete child;
 			}
 			Children.clear();
-			if (Parent == NULL)
-				return;
-			auto it = std::find(Parent->Children.begin(), Parent->Children.end(), this);
-			Parent->Children.erase(it);
 		}
 	};
 }
